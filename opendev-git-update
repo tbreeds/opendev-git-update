@@ -32,7 +32,6 @@ for repo in ${projects[@]} ; do
     new_url=$(curl -sI $temp_url| awk -F': ' '/Location/ {print $2}')
 
     # In case we're running in an already fixed or fresh clone repo.
-    # This could 
     if [ -z $new_url ] ; then
         log "Unable to map %s\n" "$current_url"
         if [ -z "$FORCE" ] ; then
