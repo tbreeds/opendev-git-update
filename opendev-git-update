@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 
-FORCE=${FORCE:-0}
+FORCE=${FORCE:+(FORCED)}
+_prefix=-1
+
+function log()
+{
+    printf "%-${_prefix}s : " "$repo"
+    printf "${@}"
+}
+
 if [ $# == 0 ] ; then
     echo "Getting projects from gerrit"
     projects=($(ssh review gerrit ls-projects | \
@@ -10,11 +18,14 @@ else
     projects=($@)
 fi
 
+for repo in ${projects[@]} ; do
+    [ ${#repo} -gt $_prefix ] && _prefix=${#repo}
+done
+
 set -e 
 for repo in ${projects[@]} ; do
     (
     [ ! -e "./$repo" ] && continue
-    printf "%-60s: URL UPDATE\n" "$repo"
     cd "./$repo" >/dev/null 2>&1
     current_url=$(git remote get-url origin)
     temp_url=$(echo $current_url | sed -e 's/^git:/https:/' -e 's/^http:/https:/')
@@ -23,20 +34,22 @@ for repo in ${projects[@]} ; do
     # In case we're running in an already fixed or fresh clone repo.
     # This could 
     if [ -z $new_url ] ; then
-        echo Unable find new URL for $current_url .. assuming it is correct
-        if [ "$FORCE" == "0" ] ; then
+        log "Unable to map %s\n" "$current_url"
+        if [ -z "$FORCE" ] ; then
             continue
         fi
-        echo Forcefully updating all remotes and refs in $repo
         new_url=$current_url
     fi
+
+    log "Upstream is now %s %s\n" "$new_url" "$FORCE"
+
     if ! git diff --exit-code >/dev/null ; then
-        echo Skipping because dirty
+        log "SKIP! Working dir is dirty"
         continue
     fi
 
     if [ "$(git rev-parse --symbolic --abbrev-ref HEAD)" != 'master' ] ; then
-        echo Skipping because not on master
+        log "SKIP! not on master"
         continue
     fi
 
