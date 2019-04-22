@@ -54,6 +54,9 @@ for repo in ${projects[@]} ; do
     fi
 
     git remote set-url origin $new_url
+    # Due to a gitea bug these refs aren't available
+    sed -i~ 's|^\(.*refs/notes/review.*\)$|#\1|' .git/config
+
     git remote update
     git checkout master
     git merge --ff-only
