@@ -44,7 +44,9 @@ for repo in ${projects[@]} ; do
     git remote update
     git checkout master
     git merge --ff-only
-    git remote remove gerrit
+    if git remote show gerrit >/dev/null 2>&1 ; then
+        git remote remove gerrit
+    fi
     git review -s
     for branch in $(git branch --no-color | awk '/stable/ {print $1}') ; do
         series=$(basename $branch)
