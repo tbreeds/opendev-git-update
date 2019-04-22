@@ -68,7 +68,7 @@ for repo in ${projects[@]} ; do
     else
         log 'Missing .gitreview\n'
     fi
-    for branch in $(git branch --no-color | awk '/stable/ {print $1}') ; do
+    for branch in $(git branch --no-color | awk '/^ *stable\// {print $1}') ; do
         series=$(basename $branch)
         if git rev-parse --symbolic --abbrev-ref "origin/stable/$series" >/dev/null 2>&1; then
             git branch -D $branch
