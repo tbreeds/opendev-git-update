@@ -12,7 +12,7 @@ function log()
 if [ $# == 0 ] ; then
     echo "Getting projects from gerrit"
     projects=($(ssh review gerrit ls-projects | \
-        grep -Ei '^(openstack|zull|starlingx|airship)/'| sort -r ))
+        grep -Ei '^(openstack|zuul|starlingx|airship)/'| sort -r ))
 else
     echo "Setting projects from args"
     projects=($@)
