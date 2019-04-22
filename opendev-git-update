@@ -28,6 +28,11 @@ for repo in ${projects[@]} ; do
     [ ! -e "./$repo" ] && continue
     cd "./$repo" >/dev/null 2>&1
     current_url=$(git remote get-url origin)
+
+    if [ -z "$FORCE" -a "https://opendev.org/" == "${current_url::20}" ] ; then
+        log "SKIP %s already\n" "$current_url"
+        continue
+    fi
     temp_url=$(echo $current_url | sed -e 's/^git:/https:/' -e 's/^http:/https:/')
     new_url=$(curl -sI $temp_url| awk -F': ' '/Location/ {print $2}')
 
