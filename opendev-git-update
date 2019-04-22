@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+FORCE=${FORCE:-0}
+if [ $# == 0 ] ; then
+    echo "Getting projects from gerrit"
+    projects=($(ssh review gerrit ls-projects | \
+        grep -Ei '^(openstack|zull|starlingx|airship)/'| sort -r ))
+else
+    echo "Setting projects from args"
+    projects=($@)
+fi
+
+set -e 
+for repo in ${projects[@]} ; do
+    (
+    [ ! -e "./$repo" ] && continue
+    printf "%-60s: URL UPDATE\n" "$repo"
+    cd "./$repo" >/dev/null 2>&1
+    current_url=$(git remote get-url origin)
+    temp_url=$(echo $current_url | sed -e 's/^git:/https:/' -e 's/^http:/https:/')
+    new_url=$(curl -sI $temp_url| awk -F': ' '/Location/ {print $2}')
+
+    # In case we're running in an already fixed or fresh clone repo.
+    # This could 
+    if [ -z $new_url ] ; then
+        echo Unable find new URL for $current_url .. assuming it is correct
+        if [ "$FORCE" == "0" ] ; then
+            continue
+        fi
+        echo Forcefully updating all remotes and refs in $repo
+        new_url=$current_url
+    fi
+    if ! git diff --exit-code >/dev/null ; then
+        echo Skipping because dirty
+        continue
+    fi
+
+    if [ "$(git rev-parse --symbolic --abbrev-ref HEAD)" != 'master' ] ; then
+        echo Skipping because not on master
+        continue
+    fi
+
+    git remote set-url origin $new_url
+    git remote update
+    git checkout master
+    git merge --ff-only
+    git remote remove gerrit
+    git review -s
+    for branch in $(git branch --no-color | awk '/stable/ {print $1}') ; do
+        series=$(basename $branch)
+        if git rev-parse --symbolic --abbrev-ref "origin/stable/$series" >/dev/null 2>&1; then
+            git branch -D $branch
+            git checkout -t "origin/stable/$series"
+            git checkout master
+        else
+            echo Skipping old branch $branch in $repo
+        fi
+    done
+    )
+done
