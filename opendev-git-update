@@ -44,12 +44,12 @@ for repo in ${projects[@]} ; do
     log "Upstream is now %s %s\n" "$new_url" "$FORCE"
 
     if ! git diff --exit-code >/dev/null ; then
-        log "SKIP! Working dir is dirty"
+        log "SKIP! Working dir is dirty\n"
         continue
     fi
 
     if [ "$(git rev-parse --symbolic --abbrev-ref HEAD)" != 'master' ] ; then
-        log "SKIP! not on master"
+        log "SKIP! not on master\n"
         continue
     fi
 
