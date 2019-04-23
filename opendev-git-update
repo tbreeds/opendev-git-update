@@ -25,7 +25,13 @@ done
 set -e 
 for repo in ${projects[@]} ; do
     (
-    [ ! -e "./$repo" ] && continue
+    if [ ! -e "./$repo" ] ; then
+        log "Create new clone\n"
+        _dir=$(dirname $repo)
+        [ -d $_dir ] || mkdir $_dir
+        git clone https://opendev.org/$repo $repo
+    fi
+
     cd "./$repo" >/dev/null 2>&1
     current_url=$(git remote get-url origin)
 
